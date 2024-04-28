@@ -151,7 +151,10 @@ class InstallProjectCommand extends MineCommand
             'role_id' => $superRoleId,
         ]);
         file_put_contents(BASE_PATH . '/.env', <<<ENV
+
+# SUPER_ADMIN 超管id 必须要和数据表「system_user」保持一致 否则菜单会展示不全
 SUPER_ADMIN = {$superAdminId}
+# ADMIN_ROLE 超管角色id 必须要和数据表「system_role」保持一致 否则菜单会展示不全
 ADMIN_ROLE = {$superRoleId}
 ENV
             , FILE_APPEND);
