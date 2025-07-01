@@ -1,0 +1,27 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# IDE specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Project specific
+test_project/
+*.zip
+
+# Go workspace file
+go.work
+
+# Dependency directories
+vendor/
+bin/
