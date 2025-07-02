@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -61,6 +62,72 @@ Example:
 			if err != nil {
 				prompt.Error(fmt.Sprintf("Failed to create project: %v", err))
 				os.Exit(1)
+			}
+
+			// For PHP projects, handle swow platform specific operations
+			if language == "php" && platform == "swow" {
+				// Check if version > 3.0
+				if utils.CompareVersions(version, "3.0") > 0 {
+					projectRoot := projectName
+					if strings.Contains(projectName, "mineadmin-") {
+						projectRoot = filepath.Dir(projectName)
+					}
+
+					// Replace files for swow platform
+					spinner = prompt.StartSpinner("Configuring project for Swow platform...")
+
+					// Get files from GitHub and replace
+					files := []struct {
+						srcPath string
+						dstPath string
+					}{
+						{
+							srcPath: ".github/ci/hyperf.php",
+							dstPath: filepath.Join(projectRoot, "bin", "hyperf.php"),
+						},
+						{
+							srcPath: ".github/ci/server.php",
+							dstPath: filepath.Join(projectRoot, "config", "autoload", "server.php"),
+						},
+						{
+							srcPath: ".github/ci/bootstrap.php",
+							dstPath: filepath.Join(projectRoot, "tests", "bootstrap.php"),
+						},
+					}
+
+					for _, file := range files {
+						content, err := utils.GetGitHubFileContent("mineadmin/MineAdmin", version, file.srcPath)
+						if err != nil {
+							spinner.Stop()
+							prompt.Error(fmt.Sprintf("Failed to fetch %s from GitHub: %v", file.srcPath, err))
+							os.Exit(1)
+						}
+
+						// Ensure target directory exists
+						if err := os.MkdirAll(filepath.Dir(file.dstPath), 0755); err != nil {
+							spinner.Stop()
+							prompt.Error(fmt.Sprintf("Failed to create directory for %s: %v", file.dstPath, err))
+							os.Exit(1)
+						}
+
+						if err := ioutil.WriteFile(file.dstPath, content, 0644); err != nil {
+							spinner.Stop()
+							prompt.Error(fmt.Sprintf("Failed to write %s: %v", file.dstPath, err))
+							os.Exit(1)
+						}
+					}
+
+					// Modify composer.json
+					composerPath := filepath.Join(projectRoot, "composer.json")
+					if err := utils.ModifyComposerJSON(composerPath); err != nil {
+						spinner.Stop()
+						prompt.Error(fmt.Sprintf("Failed to modify composer.json: %v", err))
+						os.Exit(1)
+					}
+
+					spinner.Stop()
+					prompt.Success("Project configured for Swow platform")
+				}
 			}
 
 			// For PHP projects, collect configuration
