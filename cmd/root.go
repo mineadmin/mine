@@ -8,12 +8,40 @@ import (
 )
 
 func NewRootCmd() *cobra.Command {
+	var binPhp string
+
 	rootCmd := &cobra.Command{
 		Use:   "mine",
 		Short: "MineAdmin CLI tool",
-		Long: `A command line tool for downloading and managing MineAdmin projects.
+		Long: `
+╭───────────────────────────────────────────────╮
+│                                               │
+│   ███╗   ███╗██╗███╗   ██╗███████╗           │
+│   ████╗ ████║██║████╗  ██║██╔════╝           │
+│   ██╔████╔██║██║██╔██╗ ██║█████╗             │
+│   ██║╚██╔╝██║██║██║╚██╗██║██╔══╝             │
+│   ██║ ╚═╝ ██║██║██║ ╚████║███████╗           │
+│   ╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚══════╝           │
+│                                               │
+│   MineAdmin CLI - 项目创建和管理工具         │
+│                                               │
+╰───────────────────────────────────────────────╯
+
+A powerful command line tool for downloading and managing MineAdmin projects.
+
+🔹 Commands:
+  - create: Create a new MineAdmin project
+  - select-versions: List available MineAdmin versions
+
+🔹 Examples:
+  mine create my-project
+  mine select-versions
+
 Complete documentation is available at https://github.com/mineadmin/mine`,
 	}
+
+	// Add global flags
+	rootCmd.PersistentFlags().StringVar(&binPhp, "bin-php", "php", "PHP binary path")
 
 	// Add all subcommands
 	rootCmd.AddCommand(NewCreateCmd())

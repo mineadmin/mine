@@ -1,16 +1,14 @@
 package cmd
 
 import (
-	"bufio"
-	"crypto/rand"
-	"encoding/base64"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/mineadmin/mine/internal/downloader"
+	"github.com/mineadmin/mine/internal/prompt"
+	"github.com/mineadmin/mine/internal/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -35,33 +33,34 @@ Example:
 
 			// For PHP projects, handle version selection if not specified
 			if language == "php" && version == "latest" {
+				prompt.Info("Fetching available MineAdmin versions...")
 				versions, err := downloader.NewDownloader(language, "", platform).ListVersions()
 				if err != nil {
-					log.Fatalf("Failed to get versions: %v", err)
+					prompt.Error(fmt.Sprintf("Failed to get versions: %v", err))
+					os.Exit(1)
 				}
 
-				fmt.Println("Available MineAdmin versions:")
-				for i, v := range versions {
-					fmt.Printf("%d. %s\n", i+1, v)
+				prompt.Info("Select MineAdmin Version")
+				_, selectedVersion, err := prompt.Select("Available versions", versions)
+				if err != nil {
+					prompt.Error(fmt.Sprintf("Version selection failed: %v", err))
+					os.Exit(1)
 				}
-
-				var selected int
-				fmt.Print("Select version (number): ")
-				_, err = fmt.Scanf("%d", &selected)
-				if err != nil || selected < 1 || selected > len(versions) {
-					log.Fatal("Invalid selection")
-				}
-
-				version = versions[selected-1]
+				version = selectedVersion
 			}
 
 			dl := downloader.NewDownloader(language, version, platform)
-			fmt.Printf("Creating project %s...\n", projectName)
-			fmt.Printf("Language: %s, Version: %s, Platform: %s\n", language, version, platform)
+			prompt.Info(fmt.Sprintf("Creating project %s", projectName))
+			prompt.Info(fmt.Sprintf("Language: %s, Version: %s, Platform: %s", language, version, platform))
 
+			// Start a spinner for the download process
+			spinner := prompt.StartSpinner("Downloading and extracting project files...")
 			err := dl.Download(projectName)
+			spinner.Stop()
+
 			if err != nil {
-				log.Fatalf("Failed to create project: %v", err)
+				prompt.Error(fmt.Sprintf("Failed to create project: %v", err))
+				os.Exit(1)
 			}
 
 			// For PHP projects, collect configuration
@@ -69,7 +68,7 @@ Example:
 				collectConfiguration(projectName)
 			}
 
-			fmt.Printf("Successfully created project %s\n", projectName)
+			prompt.Success(fmt.Sprintf("Successfully created project %s", projectName))
 		},
 	}
 
@@ -81,28 +80,89 @@ Example:
 }
 
 func collectConfiguration(projectDir string) {
-	reader := bufio.NewReader(os.Stdin)
+	prompt.Info("Database Configuration")
+	spinner := prompt.StartSpinner("Preparing database configuration...")
+	_, dbType, err := prompt.Select("Database type", []string{"mysql", "pgsql"})
+	spinner.Stop()
+	if err != nil {
+		prompt.Error(fmt.Sprintf("Database type selection failed: %v", err))
+		os.Exit(1)
+	}
 
-	// Database configuration
-	fmt.Println("\nDatabase Configuration:")
-	dbType := promptSelect(reader, "Database type:", []string{"mysql", "pgsql"})
-	dbHost := promptInput(reader, "Database host:", "127.0.0.1")
-	dbPort := promptInput(reader, "Database port:", "3306")
-	dbName := promptInput(reader, "Database name:", "mineadmin")
-	dbUser := promptInput(reader, "Database username:", "root")
-	dbPass := promptInput(reader, "Database password:", "root")
+	dbHost, err := prompt.Input("Database host", "127.0.0.1")
+	if err != nil {
+		prompt.Error(fmt.Sprintf("Input failed: %v", err))
+		os.Exit(1)
+	}
+
+	dbPort, err := prompt.Input("Database port", "3306")
+	if err != nil {
+		prompt.Error(fmt.Sprintf("Input failed: %v", err))
+		os.Exit(1)
+	}
+
+	dbName, err := prompt.Input("Database name", "mineadmin")
+	if err != nil {
+		prompt.Error(fmt.Sprintf("Input failed: %v", err))
+		os.Exit(1)
+	}
+
+	dbUser, err := prompt.Input("Database username", "root")
+	if err != nil {
+		prompt.Error(fmt.Sprintf("Input failed: %v", err))
+		os.Exit(1)
+	}
+
+	dbPass, err := prompt.Input("Database password", "root")
+	if err != nil {
+		prompt.Error(fmt.Sprintf("Input failed: %v", err))
+		os.Exit(1)
+	}
+	prompt.Success("Database configuration completed")
 
 	// Redis configuration
-	fmt.Println("\nRedis Configuration:")
-	redisHost := promptInput(reader, "Redis host:", "127.0.0.1")
-	redisPort := promptInput(reader, "Redis port:", "6379")
-	redisPass := promptInput(reader, "Redis password (leave empty if none):", "")
-	redisDB := promptInput(reader, "Redis database number:", "0")
+	prompt.Info("Redis Configuration")
+	spinner = prompt.StartSpinner("Preparing Redis configuration...")
+	redisHost, err := prompt.Input("Redis host", "127.0.0.1")
+	spinner.Stop()
+	if err != nil {
+		prompt.Error(fmt.Sprintf("Input failed: %v", err))
+		os.Exit(1)
+	}
+
+	redisPort, err := prompt.Input("Redis port", "6379")
+	if err != nil {
+		prompt.Error(fmt.Sprintf("Input failed: %v", err))
+		os.Exit(1)
+	}
+
+	redisPass, err := prompt.Input("Redis password (leave empty if none)", "")
+	if err != nil {
+		prompt.Error(fmt.Sprintf("Input failed: %v", err))
+		os.Exit(1)
+	}
+
+	redisDB, err := prompt.Input("Redis database number", "0")
+	if err != nil {
+		prompt.Error(fmt.Sprintf("Input failed: %v", err))
+		os.Exit(1)
+	}
+	prompt.Success("Redis configuration completed")
 
 	// Generate JWT secret
-	jwtSecret := generateJWTSecret()
+	prompt.Info("Generating security configuration")
+	spinner = prompt.StartSpinner("Generating JWT secret...")
+	jwtSecret, err := utils.GenerateJwtSecret()
+	spinner.Stop()
+	if err != nil {
+		prompt.Error(fmt.Sprintf("Failed to generate JWT secret: %v", err))
+		os.Exit(1)
+	}
+	prompt.Success("Security configuration completed")
 
 	// Create .env file
+	prompt.Info("Creating environment configuration file")
+	spinner = prompt.StartSpinner("Writing configuration to .env file...")
 	envContent := fmt.Sprintf(`APP_NAME=MineAdmin
 APP_ENV=dev
 APP_DEBUG=false
@@ -141,46 +201,10 @@ MINE_ACCESS_TOKEN=(null) # Your MINE_ACCESS_TOKEN
 		envPath = filepath.Join(rootDir, ".env")
 	}
 	if err := os.WriteFile(envPath, []byte(envContent), 0644); err != nil {
-		log.Fatalf("Failed to create .env file: %v", err)
+		spinner.Stop()
+		prompt.Error(fmt.Sprintf("Failed to create .env file: %v", err))
+		os.Exit(1)
 	}
-	fmt.Println("\n.env file created successfully!")
-}
-
-func promptInput(reader *bufio.Reader, prompt, defaultValue string) string {
-	fmt.Printf("%s [%s]: ", prompt, defaultValue)
-	input, _ := reader.ReadString('\n')
-	input = strings.TrimSpace(input)
-	if input == "" {
-		return defaultValue
-	}
-	return input
-}
-
-func promptSelect(reader *bufio.Reader, prompt string, options []string) string {
-	fmt.Println(prompt)
-	for i, opt := range options {
-		fmt.Printf("%d. %s\n", i+1, opt)
-	}
-
-	for {
-		fmt.Print("Select (number): ")
-		input, _ := reader.ReadString('\n')
-		input = strings.TrimSpace(input)
-
-		var selected int
-		if _, err := fmt.Sscanf(input, "%d", &selected); err != nil || selected < 1 || selected > len(options) {
-			fmt.Println("Invalid selection, try again")
-			continue
-		}
-
-		return options[selected-1]
-	}
-}
-
-func generateJWTSecret() string {
-	bytes := make([]byte, 32)
-	if _, err := rand.Read(bytes); err != nil {
-		log.Fatalf("Failed to generate JWT secret: %v", err)
-	}
-	return base64.StdEncoding.EncodeToString(bytes)
+	spinner.Stop()
+	prompt.Success("Configuration file created successfully")
 }

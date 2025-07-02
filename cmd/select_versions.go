@@ -80,12 +80,21 @@ Example:
 				log.Fatalf("Failed to list versions: %v", err)
 			}
 
+			// 打印标题
+			fmt.Println("\n🔍 Available MineAdmin Versions")
+			fmt.Println("============================")
+
+			// 使用tabwriter美化输出
 			w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-			fmt.Fprintln(w, "VERSION\tLANGUAGE\tSTATUS")
+			fmt.Fprintln(w, "\033[1mVERSION\tLANGUAGE\tSTATUS\033[0m") // 粗体标题
+
 			for _, v := range versions {
-				fmt.Fprintf(w, "%s\t%s\t%s\n", v, language, "available")
+				// 使用彩色输出
+				status := "\033[32mavailable\033[0m" // 绿色的"available"
+				fmt.Fprintf(w, "%s\t%s\t%s\n", v, language, status)
 			}
 			w.Flush()
+			fmt.Println() // 添加额外的空行
 		},
 	}
 

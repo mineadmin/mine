@@ -9,6 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/mineadmin/mine/internal/prompt"
 )
 
 const (
@@ -34,19 +36,26 @@ func (d *Downloader) Download(projectName string) error {
 	if d.Language == "php" {
 		url := fmt.Sprintf("%s/%s.zip", baseURL, d.Version)
 
-		// Create project directory
+		prompt.Info("Creating project directory...")
+		spinner := prompt.StartSpinner("Setting up project structure")
 		if err := os.MkdirAll(projectName, 0755); err != nil {
+			spinner.Stop()
 			return fmt.Errorf("failed to create project directory: %v", err)
 		}
+		spinner.Stop()
 
 		// Download the file
+		prompt.Info("Downloading project files...")
+		spinner = prompt.StartSpinner("Fetching MineAdmin source code")
 		resp, err := http.Get(url)
 		if err != nil {
+			spinner.Stop()
 			return fmt.Errorf("failed to download: %v", err)
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
+			spinner.Stop()
 			return fmt.Errorf("download failed with status: %s", resp.Status)
 		}
 
@@ -54,6 +63,7 @@ func (d *Downloader) Download(projectName string) error {
 		outputPath := filepath.Join(projectName, fmt.Sprintf("%s.zip", d.Version))
 		out, err := os.Create(outputPath)
 		if err != nil {
+			spinner.Stop()
 			return fmt.Errorf("failed to create output file: %v", err)
 		}
 		defer out.Close()
@@ -61,13 +71,21 @@ func (d *Downloader) Download(projectName string) error {
 		// Write the body to file
 		_, err = io.Copy(out, resp.Body)
 		if err != nil {
+			spinner.Stop()
 			return fmt.Errorf("failed to write file: %v", err)
 		}
+		spinner.Stop()
+		prompt.Success("Download completed")
 
 		// Unzip the file
+		prompt.Info("Extracting project files...")
+		spinner = prompt.StartSpinner("Unpacking MineAdmin source code")
 		if err := unzip(outputPath, projectName); err != nil {
+			spinner.Stop()
 			return fmt.Errorf("failed to unzip: %v", err)
 		}
+		spinner.Stop()
+		prompt.Success("Extraction completed")
 
 		return nil
 	}
@@ -75,19 +93,26 @@ func (d *Downloader) Download(projectName string) error {
 	// Original download logic for other languages
 	url := fmt.Sprintf("%s/%s/mineadmin-%s-%s.zip", baseURL, d.Version, d.Language, d.Platform)
 
-	// Create project directory
+	prompt.Info("Creating project directory...")
+	spinner := prompt.StartSpinner("Setting up project structure")
 	if err := os.MkdirAll(projectName, 0755); err != nil {
+		spinner.Stop()
 		return fmt.Errorf("failed to create project directory: %v", err)
 	}
+	spinner.Stop()
 
 	// Download the file
+	prompt.Info("Downloading project files...")
+	spinner = prompt.StartSpinner("Fetching MineAdmin source code")
 	resp, err := http.Get(url)
 	if err != nil {
+		spinner.Stop()
 		return fmt.Errorf("failed to download: %v", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		spinner.Stop()
 		return fmt.Errorf("download failed with status: %s", resp.Status)
 	}
 
@@ -95,6 +120,7 @@ func (d *Downloader) Download(projectName string) error {
 	outputPath := filepath.Join(projectName, fmt.Sprintf("mineadmin-%s-%s.zip", d.Language, d.Platform))
 	out, err := os.Create(outputPath)
 	if err != nil {
+		spinner.Stop()
 		return fmt.Errorf("failed to create output file: %v", err)
 	}
 	defer out.Close()
@@ -102,8 +128,11 @@ func (d *Downloader) Download(projectName string) error {
 	// Write the body to file
 	_, err = io.Copy(out, resp.Body)
 	if err != nil {
+		spinner.Stop()
 		return fmt.Errorf("failed to write file: %v", err)
 	}
+	spinner.Stop()
+	prompt.Success("Download completed")
 
 	return nil
 }
