@@ -58,6 +58,14 @@ mine select-versions --language=php
 ### Command Options Details
 
 #### create command
+
+### Dependencies
+This project uses the following main dependencies:
+- github.com/spf13/cobra v1.9.1 (CLI framework)
+- github.com/briandowns/spinner v1.23.0 (terminal spinner)
+- github.com/fatih/color v1.16.0 (terminal colors)
+- github.com/manifoldco/promptui v0.9.0 (interactive prompts)
+
 - `--language`: Specify project language (php/go/js)
 - `--version`: Specify MineAdmin version (default: latest)
 - `--platform`: Runtime platform (swow/swoole/none)
