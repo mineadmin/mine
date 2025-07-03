@@ -22,10 +22,10 @@ func NewRootCmd() *cobra.Command {
 │   ██║╚██╔╝██║██║██║╚██╗██║██╔══╝             │
 │   ██║ ╚═╝ ██║██║██║ ╚████║███████╗           │
 │   ╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚══════╝           │
-│                                               │
-│   MineAdmin CLI - Version 1.0.0         │
-│                                               │
-╰───────────────────────────────────────────────╯
+│                                              │
+│   MineAdmin CLI - Project Manager            │
+│                                              │
+╰──────────────────────────────────────────────╯
 
 A powerful command line tool for downloading and managing MineAdmin projects.
 
@@ -42,6 +42,8 @@ Complete documentation is available at https://github.com/mineadmin/mine`,
 
 	// Add global flags
 	rootCmd.PersistentFlags().StringVar(&binPhp, "bin-php", "php", "PHP binary path")
+	var binComposer string
+	rootCmd.PersistentFlags().StringVar(&binComposer, "bin-composer", "composer", "Composer binary path")
 
 	// Add all subcommands
 	rootCmd.AddCommand(NewCreateCmd())

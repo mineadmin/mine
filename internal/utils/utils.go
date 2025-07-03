@@ -117,6 +117,35 @@ func ModifyComposerJSON(path string) error {
 	return ioutil.WriteFile(path, newData, 0644)
 }
 
+// CheckPhpExtension checks if a PHP extension is loaded
+func CheckPhpExtension(phpBin, extension string) (bool, error) {
+	cmd := exec.Command(phpBin, "-m")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return false, fmt.Errorf("failed to check PHP extensions: %v", err)
+	}
+
+	extensions := strings.Split(string(output), "\n")
+	for _, ext := range extensions {
+		if strings.TrimSpace(ext) == extension {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// RunCommandWithOutput runs a command and streams its output in real-time
+func RunCommandWithOutput(command string, args []string, workingDir string) error {
+	cmd := exec.Command(command, args...)
+	cmd.Dir = workingDir
+
+	// Stream stdout and stderr to os.Stdout and os.Stderr
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
+}
+
 // GetGitHubFileContent fetches file content from GitHub repository
 func GetGitHubFileContent(repo, version, filePath string) ([]byte, error) {
 	url := fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s", repo, version, filePath)

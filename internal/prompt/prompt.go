@@ -155,6 +155,12 @@ func Info(message string) {
 	fmt.Printf("%s %s\n", infoColor("ℹ"), message)
 }
 
+// Warning prints a warning message with a yellow exclamation mark
+func Warning(message string) {
+	warningColor := color.New(color.FgYellow, color.Bold).SprintFunc()
+	fmt.Printf("%s %s\n", warningColor("⚠"), message)
+}
+
 // StartSpinner starts a spinner with the given message
 // Returns a spinner that should be stopped with spinner.Stop()
 func StartSpinner(message string) *spinner.Spinner {

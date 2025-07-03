@@ -130,9 +130,73 @@ Example:
 				}
 			}
 
-			// For PHP projects, collect configuration
+			// For PHP projects, collect configuration first
 			if language == "php" {
 				collectConfiguration(projectName)
+
+				// Then check environment and run setup
+				binPhp, _ := cmd.Flags().GetString("bin-php")
+				binComposer, _ := cmd.Flags().GetString("bin-composer")
+
+				// Check if PHP and Composer commands exist
+				if !utils.CheckCommandExists(binPhp) {
+					prompt.Warning(fmt.Sprintf("PHP command '%s' not found - skipping composer install and migrations", binPhp))
+					prompt.Info("Please install PHP and run the following commands manually:")
+					prompt.Info(fmt.Sprintf("1. %s install", binComposer))
+					prompt.Info(fmt.Sprintf("2. %s bin/hyperf.php migrate", binPhp))
+					return
+				}
+				if !utils.CheckCommandExists(binComposer) {
+					prompt.Warning(fmt.Sprintf("Composer command '%s' not found - skipping composer install and migrations", binComposer))
+					prompt.Info("Please install Composer and run the following commands manually:")
+					prompt.Info(fmt.Sprintf("1. %s install", binComposer))
+					prompt.Info(fmt.Sprintf("2. %s bin/hyperf.php migrate", binPhp))
+					return
+				}
+
+				// Check platform extension
+				spinner := prompt.StartSpinner(fmt.Sprintf("Checking %s extension...", platform))
+				extExists, err := utils.CheckPhpExtension(binPhp, platform)
+				spinner.Stop()
+				if err != nil {
+					prompt.Warning(fmt.Sprintf("Failed to check %s extension: %v", platform, err))
+					prompt.Info("Project downloaded but may not run without the extension")
+					return
+				}
+				if !extExists {
+					prompt.Warning(fmt.Sprintf("%s extension is not installed", platform))
+					prompt.Info(fmt.Sprintf("Project downloaded but will not run without %s extension:", platform))
+					if platform == "swow" {
+						prompt.Info("Swow extension: https://github.com/swow/swow")
+					} else {
+						prompt.Info("Swoole extension: https://github.com/swoole/swoole-src")
+					}
+					return
+				}
+
+				// Run composer install
+				projectRoot := projectName
+				if strings.Contains(projectName, "mineadmin-") {
+					projectRoot = filepath.Dir(projectName)
+				}
+
+				prompt.Info("Running composer install...")
+				err = utils.RunCommandWithOutput(binComposer, []string{"install"}, projectRoot)
+				if err != nil {
+					prompt.Warning(fmt.Sprintf("Composer install failed: %v", err))
+					prompt.Info("Project downloaded but dependencies not installed")
+					return
+				}
+
+				// Run hyperf.php migrate
+				prompt.Info("Running database migrations...")
+				hyperfPath := filepath.Join(projectRoot, "bin", "hyperf.php")
+				err = utils.RunCommandWithOutput(binPhp, []string{hyperfPath, "migrate"}, projectRoot)
+				if err != nil {
+					prompt.Warning(fmt.Sprintf("Database migration failed: %v", err))
+					prompt.Info("Project downloaded but database not migrated")
+					return
+				}
 			}
 
 			prompt.Success(fmt.Sprintf("Successfully created project %s", projectName))
