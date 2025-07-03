@@ -141,16 +141,16 @@ Example:
 				// Check if PHP and Composer commands exist
 				if !utils.CheckCommandExists(binPhp) {
 					prompt.Warning(fmt.Sprintf("PHP command '%s' not found - skipping composer install and migrations", binPhp))
-					prompt.Info("Please install PHP and run the following commands manually:")
-					prompt.Info(fmt.Sprintf("1. %s install", binComposer))
-					prompt.Info(fmt.Sprintf("2. %s bin/hyperf.php migrate", binPhp))
+					prompt.Error("Please install PHP and run the following commands manually:")
+					prompt.Error(fmt.Sprintf("1. %s install", binComposer))
+					prompt.Error(fmt.Sprintf("2. %s bin/hyperf.php migrate", binPhp))
 					return
 				}
 				if !utils.CheckCommandExists(binComposer) {
 					prompt.Warning(fmt.Sprintf("Composer command '%s' not found - skipping composer install and migrations", binComposer))
-					prompt.Info("Please install Composer and run the following commands manually:")
-					prompt.Info(fmt.Sprintf("1. %s install", binComposer))
-					prompt.Info(fmt.Sprintf("2. %s bin/hyperf.php migrate", binPhp))
+					prompt.Error("Please install Composer and run the following commands manually:")
+					prompt.Error(fmt.Sprintf("1. %s install", binComposer))
+					prompt.Error(fmt.Sprintf("2. %s bin/hyperf.php migrate", binPhp))
 					return
 				}
 

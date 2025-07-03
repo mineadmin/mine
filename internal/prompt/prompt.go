@@ -137,28 +137,32 @@ func getSelectTemplates() *promptui.SelectTemplates {
 	}
 }
 
-// Success prints a success message with a green checkmark
+// Success prints a success message with enhanced formatting
 func Success(message string) {
-	successColor := color.New(color.FgGreen, color.Bold).SprintFunc()
-	fmt.Printf("%s %s\n", successColor("✔"), message)
+	prefix := color.New(color.FgBlack, color.BgGreen, color.Bold).Sprint(" SUCCESS ")
+	content := color.New(color.FgGreen, color.Bold).Sprint(message)
+	fmt.Printf("%s %s\n", prefix, content)
 }
 
-// Error prints an error message with a red cross
+// Error prints an error message with enhanced formatting
 func Error(message string) {
-	errorColor := color.New(color.FgRed, color.Bold).SprintFunc()
-	fmt.Printf("%s %s\n", errorColor("✗"), message)
+	prefix := color.New(color.FgWhite, color.BgRed, color.Bold).Sprint(" ERROR ")
+	content := color.New(color.FgRed, color.Bold).Sprint(message)
+	fmt.Printf("%s %s\n", prefix, content)
 }
 
-// Info prints an info message with a blue info symbol
+// Info prints an info message with enhanced formatting
 func Info(message string) {
-	infoColor := color.New(color.FgCyan).SprintFunc()
-	fmt.Printf("%s %s\n", infoColor("ℹ"), message)
+	prefix := color.New(color.FgBlack, color.BgCyan, color.Bold).Sprint(" INFO ")
+	content := color.New(color.FgCyan).Sprint(message)
+	fmt.Printf("%s %s\n", prefix, content)
 }
 
-// Warning prints a warning message with a yellow exclamation mark
+// Warning prints a warning message with enhanced formatting
 func Warning(message string) {
-	warningColor := color.New(color.FgYellow, color.Bold).SprintFunc()
-	fmt.Printf("%s %s\n", warningColor("⚠"), message)
+	prefix := color.New(color.FgBlack, color.BgYellow, color.Bold).Sprint(" WARNING ")
+	content := color.New(color.FgYellow, color.Bold).Sprint(message)
+	fmt.Printf("%s %s\n", prefix, content)
 }
 
 // StartSpinner starts a spinner with the given message
