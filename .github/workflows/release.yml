@@ -30,7 +30,7 @@ jobs:
           if [ "${{ matrix.os }}" = "windows" ]; then
             output_name="${output_name}.exe"
           fi
-          go build -o $output_name ./...
+          go build -o $output_name .
 
       - name: Archive binary
         run: |
