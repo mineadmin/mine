@@ -33,9 +33,11 @@ jobs:
           go build -o $output_name .
 
       - name: Archive binary
-        run: |
-          mkdir -p build
-          zip -j build/app-${{ matrix.os }}-${{ matrix.arch }}.zip app-${{ matrix.os }}-${{ matrix.arch }}*
+          run: |
+            mkdir -p build
+            mv ${{ env.output_name }}* build/
+            cd build
+            zip app-${{ matrix.os }}-${{ matrix.arch }}.zip app-*app-${{ matrix.os }}-${{ matrix.arch }}*
 
       - uses: actions/upload-artifact@v4
         with:
