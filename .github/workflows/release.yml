@@ -1,76 +1,32 @@
-name: Build Release
+name: go-releaser
+
+permissions:
+  contents: write
+  id-token: write
+  packages: write
 
 on:
   push:
-    tags:
-      - '*'
+    tags: [ 'v*' ]
 
 jobs:
-  build:
-    name: Build
+  goreleaser:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        os: [windows, darwin, linux]
-        arch: [amd64, arm64]
+    env:
+      flags: ''
     steps:
-      - uses: actions/checkout@v4
-
+      - name: Checkout
+        uses: actions/checkout@v3
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v3
         with:
-          go-version: '1.22'
-
-      - name: Build
-        env:
-          GOOS: ${{ matrix.os }}
-          GOARCH: ${{ matrix.arch }}
-        run: |
-          output_name="app-$(echo ${{ matrix.os }} | sed 's/darwin/macos/')-${{ matrix.arch }}"
-          if [ "${{ matrix.os }}" = "windows" ]; then
-            output_name="${output_name}.exe"
-          fi
-          go build -o $output_name .
-
-      - name: Archive binary
-          run: |
-            mkdir -p build
-            mv ${{ env.output_name }}* build/
-            cd build
-            zip app-${{ matrix.os }}-${{ matrix.arch }}.zip app-*app-${{ matrix.os }}-${{ matrix.arch }}*
-
-      - uses: actions/upload-artifact@v4
+          go-version: 1.21
+          cache: true
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v5
         with:
-          name: binaries
-          path: build/app-${{ matrix.os }}-${{ matrix.arch }}.zip
-
-  release:
-    name: Release
-    needs: [build]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: binaries
-          path: artifacts
-
-      - name: Create source archive
-        run: git archive --format=zip -o source-code.zip HEAD
-
-      - name: Create release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
-          body: |
-            Automated release ${{ github.ref_name }}
-            Includes:
-            - Source code archive
-            - Prebuilt binaries for multiple platforms
-          files: |
-            source-code.zip
-            artifacts/**/*
+          distribution: goreleaser
+          version: latest
+          args: release --clean ${{ env.flags }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
