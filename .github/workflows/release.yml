@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [windows, macos, linux]
+        os: [windows, darwin, linux]
         arch: [amd64, arm64]
     steps:
       - uses: actions/checkout@v4
@@ -26,7 +26,7 @@ jobs:
           GOOS: ${{ matrix.os }}
           GOARCH: ${{ matrix.arch }}
         run: |
-          output_name="app-${{ matrix.os }}-${{ matrix.arch }}"
+          output_name="app-$(echo ${{ matrix.os }} | sed 's/darwin/macos/')-${{ matrix.arch }}"
           if [ "${{ matrix.os }}" = "windows" ]; then
             output_name="${output_name}.exe"
           fi
