@@ -37,7 +37,7 @@ jobs:
           mkdir -p build
           zip -j build/app-${{ matrix.os }}-${{ matrix.arch }}.zip app-${{ matrix.os }}-${{ matrix.arch }}*
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: binaries
           path: build/app-${{ matrix.os }}-${{ matrix.arch }}.zip
@@ -50,7 +50,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+       - uses: actions/download-artifact@v4
         with:
           name: binaries
           path: artifacts
