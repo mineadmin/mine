@@ -1,0 +1,75 @@
+name: Build Release
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [windows, macos, linux]
+        arch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.22'
+
+      - name: Build
+        env:
+          GOOS: ${{ matrix.os }}
+          GOARCH: ${{ matrix.arch }}
+        run: |
+          output_name="app-${{ matrix.os }}-${{ matrix.arch }}"
+          if [ "${{ matrix.os }}" = "windows" ]; then
+            output_name="${output_name}.exe"
+          fi
+          go build -o $output_name ./...
+
+      - name: Archive binary
+        run: |
+          mkdir -p build
+          zip -j build/app-${{ matrix.os }}-${{ matrix.arch }}.zip app-${{ matrix.os }}-${{ matrix.arch }}*
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: binaries
+          path: build/app-${{ matrix.os }}-${{ matrix.arch }}.zip
+
+  release:
+    name: Release
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: binaries
+          path: artifacts
+
+      - name: Create source archive
+        run: git archive --format=zip -o source-code.zip HEAD
+
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          body: |
+            Automated release ${{ github.ref_name }}
+            Includes:
+            - Source code archive
+            - Prebuilt binaries for multiple platforms
+          files: |
+            source-code.zip
+            artifacts/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
